@@ -99,11 +99,51 @@ undoLastSet() {
         }
 
         function pauseTimer() {
-            gymTimer.pauseTimer();
+            if (gymTimer) {
+                gymTimer.pauseTimer();
+            }
         }
 
-        function undoLastSet() {
-            gymTimer.undoLastSet();
+        function             undoLastSet() {
+                if (this.currentWorkoutSets.length === 0) {
+                    alert('No sets to undo');
+                    return;
+                }
+                
+                if (confirm('Undo the last set?')) {
+                    const lastSet = this.currentWorkoutSets.pop();
+                    this.totalWorkoutTime -= lastSet.duration;
+                    this.setsCount--;
+                    
+                    // If we're currently resting, stop the rest timer and go back to set mode
+                    if (this.isResting) {
+                        if (this.restTimer) {
+                            clearInterval(this.restTimer);
+                            this.restTimer = null;
+                        }
+                        this.isResting = false;
+                        this.isPaused = false;
+                        document.getElementById('restNotification').style.display = 'none';
+                        document.getElementById('stopBtn').textContent = 'Stop Set';
+                        document.getElementById('pauseBtn').textContent = 'Pause';
+                        document.getElementById('stopBtn').onclick = () => this.stopTimer();
+                    }
+                    
+                    // Update display
+                    if (this.setsCount === 0) {
+                        document.getElementById('timerType').textContent = 'Ready to Start';
+                        document.getElementById('timerDisplay').textContent = '00:00';
+                    } else {
+                        document.getElementById('timerType').textContent = `Set ${this.setsCount}`;
+                        this.startTimer();
+                    }
+                    
+                    this.updateDisplays();
+                }
+            }
+            if (gymTimer) {
+                gymTimer.deleteWorkout(index);
+            }
         }
 
         function clearLogs() {
@@ -484,7 +524,6 @@ undoLastSet() {
                         <button class="btn btn-warning" id="pauseBtn" onclick="pauseTimer()" style="display: none; flex: 1; min-width: auto;">Pause</button>
                     </div>
                     <div style="display: flex; gap: 12px; width: 100%;">
-                        <button class="btn btn-warning" onclick="undoLastSet()" style="display: none; flex: 1; min-width: auto;" id="undoBtn">Undo Set</button>
                         <button class="btn btn-warning" onclick="endWorkout()" style="display: none; flex: 1; min-width: auto;" id="endBtn">End Workout</button>
                     </div>
                 </div>
@@ -693,7 +732,6 @@ undoLastSet() {
                 document.getElementById('stopBtn').style.display = 'inline-block';
                 document.getElementById('pauseBtn').style.display = 'inline-block';
                 document.getElementById('endBtn').style.display = 'inline-block';
-                document.getElementById('undoBtn').style.display = 'inline-block';
             }
 
             startSet() {
@@ -904,7 +942,6 @@ undoLastSet() {
                 document.getElementById('stopBtn').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
                 document.getElementById('endBtn').style.display = 'none';
-                document.getElementById('undoBtn').style.display = 'none';
                 document.getElementById('stopBtn').textContent = 'Stop Set';
                 document.getElementById('pauseBtn').textContent = 'Pause';
                 document.getElementById('stopBtn').onclick = () => this.stopTimer();
@@ -985,7 +1022,7 @@ undoLastSet() {
                                     <div>Workout - ${dateStr}</div>
                                     <div style="font-size: 0.9rem; opacity: 0.7; font-weight: normal;">${timeStr}</div>
                                 </div>
-                                <button class="delete-btn" onclick="gymTimer.deleteWorkout(${index})">Delete</button>
+                                <button class="delete-btn" onclick="deleteWorkout(${index})">Delete</button>
                             </div>
                             <div class="log-details">
                                 <strong>Total Time:</strong> ${this.formatTime(log.totalTime)} | 
