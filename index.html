@@ -1,19 +1,508 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Fitness Ticker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            position: relative;
+        }
+
+        .container {
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px 10px;
+            padding-bottom: 80px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #1a1a1a;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            position: fixed;
+            bottom: 20px;
+            left: 10px;
+            right: 10px;
+            z-index: 100;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .tabs.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            background: #007AFF;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Timer Section */
+        .timer-card {
+            background: #2a2a2a;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 300;
+            margin: 20px 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: -2px;
+        }
+
+        .timer-type {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-primary {
+            background: #007AFF;
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: #0056CC;
+            transform: scale(0.98);
+        }
+
+        .btn-danger {
+            background: #FF3B30;
+            color: white;
+        }
+
+        .btn-danger:active {
+            background: #D70015;
+            transform: scale(0.98);
+        }
+
+        .btn-warning {
+            background: #FF9500;
+            color: white;
+        }
+
+        .btn-warning:active {
+            background: #CC7700;
+            transform: scale(0.98);
+        }
+        
+        .btn-secondary {
+            background: #8E8E93;
+            color: white;
+        }
+
+        .btn-secondary:active {
+            background: #6D6D72;
+            transform: scale(0.98);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #007AFF;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Analytics Section */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .analytics-card {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .analytics-card h3 {
+            margin-bottom: 16px;
+            color: #007AFF;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        /* Log Section */
+        .log-entry {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 3px solid #007AFF;
+            position: relative;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .delete-btn {
+            background: #FF3B30;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .delete-btn:active {
+            background: #D70015;
+            transform: scale(0.95);
+        }
+
+        .log-details {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .clear-logs {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .rest-notification {
+            background: #007AFF;
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            animation: pulse 1s infinite;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            .timer-display {
+                font-size: 3rem;
+            }
+            
+            .btn {
+                padding: 14px 24px;
+                font-size: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .container {
+                padding: 15px;
+                padding-bottom: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fitness Ticker</h1>
+            <p>Track your workouts, rest periods, and fitness analytics</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('timer')">Timer</div>
+            <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+            <div class="tab" onclick="switchTab('logs')">Workout Log</div>
+        </div>
+
+        <div id="timer" class="tab-content active">
+            <div class="rest-notification" id="restNotification">
+                Rest time is up! Start your next set!
+            </div>
+
+            <div class="timer-card">
+                <div class="timer-type" id="timerType">Ready to Start</div>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="startBtn" onclick="startWorkout()">Start Workout</button>
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <button class="btn btn-danger" id="stopBtn" onclick="stopTimer()" style="display: none; flex: 1;">Stop Set</button>
+                        <button class="btn btn-warning" id="pauseBtn" onclick="pauseTimer()" style="display: none; flex: 1;">Pause</button>
+                    </div>
+                    <button class="btn btn-danger" onclick="endWorkout()" style="display: none;" id="endBtn">End Workout</button>
+                    <button class="btn btn-secondary" onclick="undoLastSet()" style="display: none;" id="undoBtn">Undo Last Set</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="currentSets">0</div>
+                    <div class="stat-label">Sets Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentWorkoutTime">00:00</div>
+                    <div class="stat-label">Workout Time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentRestTime">00:00</div>
+                    <div class="stat-label">Rest Time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalGymTime">00:00</div>
+                    <div class="stat-label">Total Gym Time</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analytics" class="tab-content">
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Daily Stats</h3>
+                    <div class="metric">
+                        <span>Total Gym Time:</span>
+                        <span id="dailyTotal">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Workout Time:</span>
+                        <span id="dailyWorkout">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Rest Time:</span>
+                        <span id="dailyRest">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Total Sets:</span>
+                        <span id="dailySets">0</span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3>Weekly Stats</h3>
+                    <div class="metric">
+                        <span>Total Gym Time:</span>
+                        <span id="weeklyTotal">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Workout Time:</span>
+                        <span id="weeklyWorkout">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Rest Time:</span>
+                        <span id="weeklyRest">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Total Sets:</span>
+                        <span id="weeklySets">0</span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3>Monthly Stats</h3>
+                    <div class="metric">
+                        <span>Total Gym Time:</span>
+                        <span id="monthlyTotal">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Workout Time:</span>
+                        <span id="monthlyWorkout">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Rest Time:</span>
+                        <span id="monthlyRest">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Total Sets:</span>
+                        <span id="monthlySets">0</span>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3>All Time Records</h3>
+                    <div class="metric">
+                        <span>Longest Workout:</span>
+                        <span id="longestWorkout">00:00</span>
+                    </div>
+                    <div class="metric">
+                        <span>Most Sets (Day):</span>
+                        <span id="mostSets">0</span>
+                    </div>
+                    <div class="metric">
+                        <span>Total Workouts:</span>
+                        <span id="totalWorkouts">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="logs" class="tab-content">
+            <div class="analytics-card">
+                <h3>Recent Workouts</h3>
+                <div id="workoutLogs">
+                    <p style="opacity: 0.6; text-align: center;">No workouts logged yet. Start your first workout!</p>
+                </div>
+                <div class="clear-logs">
+                    <button class="btn btn-danger" onclick="clearLogs()">Clear All Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
         class GymTimer {
             constructor() {
                 this.isWorkoutActive = false;
                 this.isSetActive = false;
                 this.isResting = false;
                 this.isPaused = false;
+                
                 this.setStartTime = null;
                 this.workoutStartTime = null;
-                this.pauseStartTime = null; // Track when a pause starts
-                this.pausedTime = 0; // Accumulate total paused time for a set
+                this.pauseStartTime = null;
+                this.restStartTime = null;
+
+                this.pausedTime = 0;
                 this.totalWorkoutTime = 0;
                 this.totalRestTime = 0;
                 this.setsCount = 0;
+                
                 this.timer = null;
                 this.restTimer = null;
+                
                 this.workoutData = this.loadData();
                 this.currentWorkoutSets = [];
                 
@@ -54,18 +543,14 @@
 
             getWeekKey(date = new Date()) {
                 const year = date.getFullYear();
-                const weekNum = this.getWeekNumber(date);
-                return `${year}-W${weekNum}`;
+                const firstDayOfYear = new Date(year, 0, 1);
+                const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+                const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+                return `${year}-W${weekNum.toString().padStart(2, '0')}`;
             }
 
             getMonthKey(date = new Date()) {
                 return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            }
-
-            getWeekNumber(date) {
-                const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-                const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
-                return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
             }
 
             startWorkout() {
@@ -82,6 +567,7 @@
                 document.getElementById('stopBtn').style.display = 'inline-block';
                 document.getElementById('pauseBtn').style.display = 'inline-block';
                 document.getElementById('endBtn').style.display = 'inline-block';
+                document.getElementById('undoBtn').style.display = 'none';
             }
 
             startSet() {
@@ -111,8 +597,7 @@
 
             stopTimer() {
                 if (!this.isSetActive) return;
-
-                // If it was paused when stopped, calculate final pause duration
+                
                 if (this.isPaused) {
                     this.pausedTime += Date.now() - this.pauseStartTime;
                     this.isPaused = false;
@@ -130,47 +615,36 @@
                 
                 this.isSetActive = false;
                 this.pausedTime = 0;
+                if (this.timer) clearInterval(this.timer);
+                
+                document.getElementById('undoBtn').style.display = 'inline-block';
                 this.startRestTimer();
-                
-                if (this.timer) {
-                    clearInterval(this.timer);
-                    this.timer = null;
-                }
-                
                 this.updateDisplays();
             }
-
-            // --- ✨ NEW METHOD: Handles pausing and resuming ---
+            
             pauseTimer() {
                 if (!this.isSetActive || this.isResting) return;
 
                 this.isPaused = !this.isPaused;
-                const pauseBtn = document.getElementById('pauseBtn');
 
                 if (this.isPaused) {
-                    // We are now paused
                     this.pauseStartTime = Date.now();
-                    pauseBtn.textContent = 'Resume';
-                    // Stop the timer from updating the display text
-                    if (this.timer) clearInterval(this.timer);
+                    document.getElementById('pauseBtn').textContent = 'Resume';
                 } else {
-                    // We are now resuming
                     this.pausedTime += Date.now() - this.pauseStartTime;
-                    pauseBtn.textContent = 'Pause';
-                    // Restart the timer to continue display updates
-                    this.startTimer();
+                    document.getElementById('pauseBtn').textContent = 'Pause';
                 }
             }
 
             startRestTimer() {
                 this.isResting = true;
-                const restStartTime = Date.now();
+                this.restStartTime = Date.now();
                 
                 document.getElementById('timerType').textContent = 'Rest Time';
                 
-                if(this.restTimer) clearInterval(this.restTimer);
+                if (this.restTimer) clearInterval(this.restTimer);
                 this.restTimer = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - restStartTime) / 1000);
+                    const elapsed = Math.floor((Date.now() - this.restStartTime) / 1000);
                     document.getElementById('timerDisplay').textContent = this.formatTime(elapsed);
                 }, 100);
 
@@ -181,66 +655,54 @@
                     }
                 }, 60000);
 
-                const stopBtn = document.getElementById('stopBtn');
-                stopBtn.textContent = 'Start Next Set';
-                stopBtn.onclick = () => {
-                    const restDuration = Math.floor((Date.now() - restStartTime) / 1000);
+                document.getElementById('stopBtn').textContent = 'Start Next Set';
+                document.getElementById('stopBtn').onclick = () => {
+                    const restDuration = Math.floor((Date.now() - this.restStartTime) / 1000);
                     this.totalRestTime += restDuration;
                     
-                    if (this.restTimer) {
-                        clearInterval(this.restTimer);
-                        this.restTimer = null;
-                    }
+                    if (this.restTimer) clearInterval(this.restTimer);
+                    this.restTimer = null;
                     
-                    stopBtn.textContent = 'Stop Set';
-                    stopBtn.onclick = () => this.stopTimer();
+                    document.getElementById('stopBtn').textContent = 'Stop Set';
+                    document.getElementById('stopBtn').onclick = () => this.stopTimer();
                     
                     this.startSet();
                 };
             }
 
-            playNotificationSound() {
-                const audioContext = new(window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'square';
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            }
-
             endWorkout() {
                 if (this.timer) clearInterval(this.timer);
                 if (this.restTimer) clearInterval(this.restTimer);
-
-                const totalWorkoutDuration = this.isWorkoutActive ? Math.floor((Date.now() - this.workoutStartTime) / 1000) : 0;
                 
-                if (this.isWorkoutActive && this.setsCount > 0) {
-                   this.saveWorkoutData(totalWorkoutDuration);
+                if (this.isResting && this.restStartTime) {
+                    const restDuration = Math.floor((Date.now() - this.restStartTime) / 1000);
+                    this.totalRestTime += restDuration;
                 }
+                
+                const totalWorkoutDuration = Math.floor((Date.now() - this.workoutStartTime) / 1000);
+                
+                this.saveWorkoutData(totalWorkoutDuration);
                 this.resetTimer();
             }
 
             saveWorkoutData(totalDuration) {
+                if (this.setsCount === 0) return; // Don't save empty workouts
                 const now = new Date();
                 const dateKey = this.getDateKey(now);
                 const weekKey = this.getWeekKey(now);
                 const monthKey = this.getMonthKey(now);
-                
-                // Initialize stats if not exists
-                if (!this.workoutData.dailyStats[dateKey]) this.workoutData.dailyStats[dateKey] = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                if (!this.workoutData.weeklyStats[weekKey]) this.workoutData.weeklyStats[weekKey] = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                if (!this.workoutData.monthlyStats[monthKey]) this.workoutData.monthlyStats[monthKey] = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
 
-                // Update stats
-                const stats = [this.workoutData.dailyStats[dateKey], this.workoutData.weeklyStats[weekKey], this.workoutData.monthlyStats[monthKey]];
+                const initStats = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                if (!this.workoutData.dailyStats[dateKey]) this.workoutData.dailyStats[dateKey] = {...initStats};
+                if (!this.workoutData.weeklyStats[weekKey]) this.workoutData.weeklyStats[weekKey] = {...initStats};
+                if (!this.workoutData.monthlyStats[monthKey]) this.workoutData.monthlyStats[monthKey] = {...initStats};
+                
+                const stats = [
+                    this.workoutData.dailyStats[dateKey],
+                    this.workoutData.weeklyStats[weekKey],
+                    this.workoutData.monthlyStats[monthKey]
+                ];
+                
                 stats.forEach(stat => {
                     stat.totalTime += totalDuration;
                     stat.workoutTime += this.totalWorkoutTime;
@@ -248,12 +710,14 @@
                     stat.sets += this.setsCount;
                 });
                 
-                // Update all-time records
                 this.workoutData.allTimeStats.totalWorkouts++;
-                if (totalDuration > this.workoutData.allTimeStats.longestWorkout) this.workoutData.allTimeStats.longestWorkout = totalDuration;
-                if (this.workoutData.dailyStats[dateKey].sets > this.workoutData.allTimeStats.mostSets) this.workoutData.allTimeStats.mostSets = this.workoutData.dailyStats[dateKey].sets;
-
-                // Add workout log
+                if (totalDuration > this.workoutData.allTimeStats.longestWorkout) {
+                    this.workoutData.allTimeStats.longestWorkout = totalDuration;
+                }
+                if (this.workoutData.dailyStats[dateKey].sets > this.workoutData.allTimeStats.mostSets) {
+                    this.workoutData.allTimeStats.mostSets = this.workoutData.dailyStats[dateKey].sets;
+                }
+                
                 this.workoutData.workoutLogs.unshift({
                     date: now.toISOString(),
                     totalTime: totalDuration,
@@ -263,12 +727,39 @@
                     setsDetails: [...this.currentWorkoutSets]
                 });
                 
-                this.workoutData.workoutLogs = this.workoutData.workoutLogs.slice(0, 50); // Keep last 50
+                this.workoutData.workoutLogs = this.workoutData.workoutLogs.slice(0, 50);
                 
                 this.saveData();
                 this.updateAnalytics();
                 this.loadLogs();
             }
+            
+            undoLastSet() {
+                if (this.isSetActive) {
+                    alert("Finish the current set before undoing the previous one.");
+                    return;
+                }
+                if (this.currentWorkoutSets.length === 0) {
+                    alert('No completed sets to undo.');
+                    return;
+                }
+                
+                if (confirm('Undo the last completed set? This will put you back into a rest period.')) {
+                    const lastSet = this.currentWorkoutSets.pop();
+                    this.totalWorkoutTime -= lastSet.duration;
+                    this.setsCount--;
+
+                    if (this.setsCount === 0) {
+                        document.getElementById('undoBtn').style.display = 'none';
+                    }
+                    
+                    if (this.restTimer) clearInterval(this.restTimer);
+                    
+                    this.startRestTimer();
+                    this.updateDisplays();
+                }
+            }
+
 
             resetTimer() {
                 this.isWorkoutActive = false;
@@ -288,6 +779,8 @@
                 document.getElementById('stopBtn').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
                 document.getElementById('endBtn').style.display = 'none';
+                document.getElementById('undoBtn').style.display = 'none';
+                
                 document.getElementById('stopBtn').textContent = 'Stop Set';
                 document.getElementById('pauseBtn').textContent = 'Pause';
                 document.getElementById('stopBtn').onclick = () => this.stopTimer();
@@ -299,52 +792,42 @@
                 const today = this.getDateKey();
                 const todayStats = this.workoutData.dailyStats[today] || { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
                 
-                let currentSets = todayStats.sets;
-                let currentWorkoutTime = todayStats.workoutTime;
-                let currentRestTime = todayStats.restTime;
-                let totalGymTime = todayStats.totalTime;
-
-                if (this.isWorkoutActive) {
-                    currentSets += this.setsCount;
-                    currentWorkoutTime += this.totalWorkoutTime;
-                    currentRestTime += this.totalRestTime;
-                    totalGymTime += Math.floor((Date.now() - this.workoutStartTime) / 1000);
-                }
-
-                document.getElementById('currentSets').textContent = currentSets;
+                const currentTotalSets = todayStats.sets + this.setsCount;
+                const currentWorkoutTime = todayStats.workoutTime + this.totalWorkoutTime;
+                const currentRestTime = todayStats.restTime + this.totalRestTime;
+                const currentGymTime = todayStats.totalTime + (this.isWorkoutActive ? Math.floor((Date.now() - this.workoutStartTime) / 1000) : 0);
+                
+                document.getElementById('currentSets').textContent = currentTotalSets;
                 document.getElementById('currentWorkoutTime').textContent = this.formatTime(currentWorkoutTime);
                 document.getElementById('currentRestTime').textContent = this.formatTime(currentRestTime);
-                document.getElementById('totalGymTime').textContent = this.formatTime(totalGymTime);
+                document.getElementById('totalGymTime').textContent = this.formatTime(currentGymTime);
             }
 
             updateAnalytics() {
                 const today = this.getDateKey();
                 const thisWeek = this.getWeekKey();
                 const thisMonth = this.getMonthKey();
+                const emptyStats = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
                 
-                const dailyStats = this.workoutData.dailyStats[today] || { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                const weeklyStats = this.workoutData.weeklyStats[thisWeek] || { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                const monthlyStats = this.workoutData.monthlyStats[thisMonth] || { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                const dailyStats = this.workoutData.dailyStats[today] || emptyStats;
+                const weeklyStats = this.workoutData.weeklyStats[thisWeek] || emptyStats;
+                const monthlyStats = this.workoutData.monthlyStats[thisMonth] || emptyStats;
                 
-                // Daily
                 document.getElementById('dailyTotal').textContent = this.formatTime(dailyStats.totalTime);
                 document.getElementById('dailyWorkout').textContent = this.formatTime(dailyStats.workoutTime);
                 document.getElementById('dailyRest').textContent = this.formatTime(dailyStats.restTime);
                 document.getElementById('dailySets').textContent = dailyStats.sets;
                 
-                // Weekly
                 document.getElementById('weeklyTotal').textContent = this.formatTime(weeklyStats.totalTime);
                 document.getElementById('weeklyWorkout').textContent = this.formatTime(weeklyStats.workoutTime);
                 document.getElementById('weeklyRest').textContent = this.formatTime(weeklyStats.restTime);
                 document.getElementById('weeklySets').textContent = weeklyStats.sets;
                 
-                // Monthly
                 document.getElementById('monthlyTotal').textContent = this.formatTime(monthlyStats.totalTime);
                 document.getElementById('monthlyWorkout').textContent = this.formatTime(monthlyStats.workoutTime);
                 document.getElementById('monthlyRest').textContent = this.formatTime(monthlyStats.restTime);
                 document.getElementById('monthlySets').textContent = monthlyStats.sets;
                 
-                // All-time
                 document.getElementById('longestWorkout').textContent = this.formatTime(this.workoutData.allTimeStats.longestWorkout);
                 document.getElementById('mostSets').textContent = this.workoutData.allTimeStats.mostSets;
                 document.getElementById('totalWorkouts').textContent = this.workoutData.allTimeStats.totalWorkouts;
@@ -358,7 +841,7 @@
                     return;
                 }
                 
-                logsContainer.innerHTML = this.workoutData.workoutLogs.slice(0, 20).map((log, index) => {
+                logsContainer.innerHTML = this.workoutData.workoutLogs.map((log, index) => {
                     const date = new Date(log.date);
                     const dateStr = date.toLocaleDateString();
                     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -378,14 +861,12 @@
                                 <strong>Rest:</strong> ${this.formatTime(log.restTime)} | 
                                 <strong>Sets:</strong> ${log.sets}
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }).join('');
             }
             
-            // --- ✨ NEW METHOD: Deletes a workout log ---
             deleteWorkout(index) {
-                if (confirm('Are you sure you want to delete this workout log? This cannot be undone.')) {
+                if (confirm('Are you sure you want to delete this workout log? This action is permanent.')) {
                     this.workoutData.workoutLogs.splice(index, 1);
                     this.recalculateAllStats();
                     this.saveData();
@@ -394,53 +875,46 @@
                 }
             }
 
-            // --- ✨ NEW METHOD: Rebuilds stats after a deletion ---
             recalculateAllStats() {
-                // Reset all stats
-                const newWorkoutData = {
-                    dailyStats: {}, weeklyStats: {}, monthlyStats: {},
-                    allTimeStats: { longestWorkout: 0, mostSets: 0, totalWorkouts: 0 },
-                    workoutLogs: this.workoutData.workoutLogs // Keep the logs
-                };
+                const logs = [...this.workoutData.workoutLogs].reverse(); // Oldest to newest
                 
-                // Recalculate from remaining logs (in reverse, from oldest to newest)
-                for (const log of [...this.workoutData.workoutLogs].reverse()) {
+                this.workoutData.dailyStats = {};
+                this.workoutData.weeklyStats = {};
+                this.workoutData.monthlyStats = {};
+                this.workoutData.allTimeStats = { longestWorkout: 0, mostSets: 0, totalWorkouts: logs.length };
+
+                for (const log of logs) {
                     const date = new Date(log.date);
                     const dateKey = this.getDateKey(date);
                     const weekKey = this.getWeekKey(date);
                     const monthKey = this.getMonthKey(date);
-
-                    // Initialize stats objects if they don't exist
-                    if (!newWorkoutData.dailyStats[dateKey]) newWorkoutData.dailyStats[dateKey] = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                    if (!newWorkoutData.weeklyStats[weekKey]) newWorkoutData.weeklyStats[weekKey] = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                    if (!newWorkoutData.monthlyStats[monthKey]) newWorkoutData.monthlyStats[monthKey] = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-
-                    // Add log data to each stat period
-                    const periods = [newWorkoutData.dailyStats[dateKey], newWorkoutData.weeklyStats[weekKey], newWorkoutData.monthlyStats[monthKey]];
-                    periods.forEach(p => {
-                        p.totalTime += log.totalTime;
-                        p.workoutTime += log.workoutTime;
-                        p.restTime += log.restTime;
-                        p.sets += log.sets;
+                    
+                    const initStats = { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                    if (!this.workoutData.dailyStats[dateKey]) this.workoutData.dailyStats[dateKey] = {...initStats};
+                    if (!this.workoutData.weeklyStats[weekKey]) this.workoutData.weeklyStats[weekKey] = {...initStats};
+                    if (!this.workoutData.monthlyStats[monthKey]) this.workoutData.monthlyStats[monthKey] = {...initStats};
+                    
+                    const stats = [this.workoutData.dailyStats[dateKey], this.workoutData.weeklyStats[weekKey], this.workoutData.monthlyStats[monthKey]];
+                    stats.forEach(s => {
+                        s.totalTime += log.totalTime; s.workoutTime += log.workoutTime; s.restTime += log.restTime; s.sets += log.sets;
                     });
+
+                    if (log.totalTime > this.workoutData.allTimeStats.longestWorkout) {
+                        this.workoutData.allTimeStats.longestWorkout = log.totalTime;
+                    }
                 }
                 
-                // Recalculate All-Time stats
-                newWorkoutData.allTimeStats.totalWorkouts = newWorkoutData.workoutLogs.length;
-                let longestWorkout = 0;
-                let mostSets = 0;
-                newWorkoutData.workoutLogs.forEach(log => {
-                    if (log.totalTime > longestWorkout) longestWorkout = log.totalTime;
-                    if (log.sets > mostSets) mostSets = log.sets;
-                });
-                newWorkoutData.allTimeStats.longestWorkout = longestWorkout;
-                newWorkoutData.allTimeStats.mostSets = mostSets;
-
-                this.workoutData = newWorkoutData;
+                let maxSets = 0;
+                for (const key in this.workoutData.dailyStats) {
+                    if (this.workoutData.dailyStats[key].sets > maxSets) {
+                        maxSets = this.workoutData.dailyStats[key].sets;
+                    }
+                }
+                this.workoutData.allTimeStats.mostSets = maxSets;
             }
 
             clearLogs() {
-                if (confirm('Are you sure you want to clear all workout data? This cannot be undone.')) {
+                if (confirm('Are you sure you want to clear ALL workout data? This cannot be undone.')) {
                     this.workoutData = {
                         dailyStats: {}, weeklyStats: {}, monthlyStats: {},
                         allTimeStats: { longestWorkout: 0, mostSets: 0, totalWorkouts: 0 },
@@ -451,64 +925,86 @@
                     this.loadLogs();
                 }
             }
+            
+            playNotificationSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'square';
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                } catch (error) {
+                    console.error("Could not play notification sound:", error);
+                }
+            }
         }
 
-        // --- GLOBAL SCOPE ---
-        // Only one set of clean global functions
+        // --- Global Functions ---
         let gymTimer;
 
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
             document.getElementById(tabName).classList.add('active');
             
             if (gymTimer) {
-                if (tabName === 'analytics') {
-                    gymTimer.updateAnalytics();
-                } else if (tabName === 'logs') {
-                    gymTimer.loadLogs();
-                }
+                if (tabName === 'analytics') gymTimer.updateAnalytics();
+                else if (tabName === 'logs') gymTimer.loadLogs();
             }
         }
 
-        function startWorkout() {
-            if (gymTimer) gymTimer.startWorkout();
-        }
-
-        function stopTimer() {
-            if (gymTimer) gymTimer.stopTimer();
-        }
-
-        function pauseTimer() {
-            if (gymTimer) gymTimer.pauseTimer();
-        }
-
+        function startWorkout() { if (gymTimer) gymTimer.startWorkout(); }
+        function stopTimer() { if (gymTimer) gymTimer.stopTimer(); }
+        function pauseTimer() { if (gymTimer) gymTimer.pauseTimer(); }
+        function undoLastSet() { if (gymTimer) gymTimer.undoLastSet(); }
+        function deleteWorkout(index) { if (gymTimer) gymTimer.deleteWorkout(index); }
+        function clearLogs() { if (gymTimer) gymTimer.clearLogs(); }
         function endWorkout() {
             if (confirm('Are you sure you want to end this workout?')) {
                 if (gymTimer) gymTimer.endWorkout();
             }
         }
 
-        function deleteWorkout(index) {
-            if (gymTimer) gymTimer.deleteWorkout(index);
-        }
-
-        function clearLogs() {
-            if (gymTimer) gymTimer.clearLogs();
-        }
-        
-        // --- INITIALIZATION ---
+        // --- Initialize App ---
         document.addEventListener('DOMContentLoaded', function() {
             gymTimer = new GymTimer();
             
-            // This interval can be intensive. Only update when the workout is active.
             setInterval(() => {
                 if (gymTimer && gymTimer.isWorkoutActive) {
                     gymTimer.updateDisplays();
                 }
             }, 1000);
+
+            // Handle scroll to hide/show menu bar
+            let lastScrollTop = 0;
+            let scrollTimeout;
+            const container = document.querySelector('.container');
+            container.addEventListener('scroll', function() {
+                const tabs = document.querySelector('.tabs');
+                const currentScrollTop = container.scrollTop;
+                
+                clearTimeout(scrollTimeout);
+                
+                if (currentScrollTop > lastScrollTop && currentScrollTop > 50) {
+                    tabs.classList.add('hidden'); // Scrolling down
+                } else {
+                    tabs.classList.remove('hidden'); // Scrolling up
+                }
+                
+                scrollTimeout = setTimeout(() => {
+                    tabs.classList.remove('hidden');
+                }, 2000);
+                
+                lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
+            });
         });
 
         window.addEventListener('beforeunload', function(e) {
@@ -519,3 +1015,5 @@
             }
         });
     </script>
+</body>
+</html>
