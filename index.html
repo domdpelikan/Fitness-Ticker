@@ -67,6 +67,51 @@ undoLastSet() {
             }
         }
 
+        // Global functions - must be defined before HTML uses them
+        function startWorkout() {
+            if (gymTimer) {
+                gymTimer.startWorkout();
+            }
+        }
+
+        function stopTimer() {
+            if (gymTimer) {
+                gymTimer.stopTimer();
+            }
+        }
+
+        function endWorkout() {
+            if (confirm('Are you sure you want to end this workout?')) {
+                if (gymTimer) {
+                    gymTimer.endWorkout();
+                }
+            }
+        }
+
+        function pauseTimer() {
+            console.log('pauseTimer called, gymTimer exists:', !!gymTimer);
+            if (gymTimer && gymTimer.isSetActive && !gymTimer.isResting) {
+                gymTimer.pauseTimer();
+            } else {
+                console.log('Cannot pause - not in active set or gymTimer not ready');
+            }
+        }
+
+        function deleteWorkout(index) {
+            console.log('deleteWorkout called with index:', index, 'gymTimer exists:', !!gymTimer);
+            if (gymTimer) {
+                gymTimer.deleteWorkout(index);
+            } else {
+                console.log('gymTimer not ready');
+            }
+        }
+
+        function clearLogs() {
+            if (gymTimer) {
+                gymTimer.clearLogs();
+            }
+        }
+
         // Global functions
         let gymTimer;
         let lastScrollTop = 0;
