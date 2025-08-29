@@ -1,4 +1,253 @@
-<!DOCTYPE html>
+undoLastSet() {
+                if (this.currentWorkoutSets.length === 0) {
+                    alert('No sets to undo');
+                    return;
+                }
+                
+                if (confirm('Undo the last set?')) {
+                    const lastSet = this.currentWorkoutSets.pop();
+                    this.totalWorkoutTime -= lastSet.duration;
+                    this.setsCount--;
+                    
+                    // If we're currently resting, stop the rest timer and go back to set mode
+                    if (this.isResting) {
+                        if (this.restTimer) {
+                            clearInterval(this.restTimer);
+                            this.restTimer = null;
+                        }
+                        this.isResting = false;
+                        this.isPaused = false;
+                        document.getElementById('restNotification').style.display = 'none';
+                        document.getElementById('stopBtn').textContent = 'Stop Set';
+                        document.getElementById('pauseBtn').textContent = 'Pause';
+                        document.getElementById('stopBtn').onclick = () => this.stopTimer();
+                    }
+                    
+                    // Update display
+                    if (this.setsCount === 0) {
+                        document.getElementById('timerType').textContent = 'Ready to Start';
+                        document.getElementById('timerDisplay').textContent = '00:00';
+                    } else {
+                        document.getElementById('timerType').textContent = `Set ${this.setsCount}`;
+                        this.startTimer();
+                    }
+                    
+                    this.updateDisplays();
+                }
+            }
+                let longestWorkout = 0;
+                let mostSets = 0;
+                
+                this.workoutData.workoutLogs.forEach(log => {
+                    if (log.totalTime > longestWorkout) {
+                        longestWorkout = log.totalTime;
+                    }
+                    if (log.sets > mostSets) {
+                        mostSets = log.sets;
+                    }
+                });
+                
+                this.workoutData.allTimeStats.longestWorkout = longestWorkout;
+                this.workoutData.allTimeStats.mostSets = mostSets;
+            }
+
+            clearLogs() {
+                if (confirm('Are you sure you want to clear all workout data? This cannot be undone.')) {
+                    this.workoutData = {
+                        dailyStats: {},
+                        weeklyStats: {},
+                        monthlyStats: {},
+                        allTimeStats: { longestWorkout: 0, mostSets: 0, totalWorkouts: 0 },
+                        workoutLogs: []
+                    };
+                    this.saveData();
+                    this.updateAnalytics();
+                    this.loadLogs();
+                }
+            }
+        }
+
+        // Global functions - must be defined before HTML uses them
+        function startWorkout() {
+            if (gymTimer) {
+                gymTimer.startWorkout();
+            }
+        }
+
+        function stopTimer() {
+            if (gymTimer) {
+                gymTimer.stopTimer();
+            }
+        }
+
+        function endWorkout() {
+            if (confirm('Are you sure you want to end this workout?')) {
+                if (gymTimer) {
+                    gymTimer.endWorkout();
+                }
+            }
+        }
+
+        function pauseTimer() {
+            console.log('pauseTimer button clicked');
+            if (gymTimer) {
+                console.log('gymTimer exists, calling pauseTimer method');
+                gymTimer.pauseTimer();
+            } else {
+                console.log('gymTimer is null or undefined');
+            }
+        }
+
+        function deleteWorkout(index) {
+            console.log('deleteWorkout called with index:', index, 'gymTimer exists:', !!gymTimer);
+            if (gymTimer) {
+                gymTimer.deleteWorkout(index);
+            } else {
+                console.log('gymTimer not ready');
+            }
+        }
+
+        function clearLogs() {
+            if (gymTimer) {
+                gymTimer.clearLogs();
+            }
+        }
+
+        // Global functions
+        let gymTimer;
+        let lastScrollTop = 0;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'analytics') {
+                gymTimer.updateAnalytics();
+            } else if (tabName === 'logs') {
+                gymTimer.loadLogs();
+            }
+        }
+
+        function startWorkout() {
+            gymTimer.startWorkout();
+        }
+
+        function stopTimer() {
+            gymTimer.stopTimer();
+        }
+
+        function endWorkout() {
+            if (confirm('Are you sure you want to end this workout?')) {
+                gymTimer.endWorkout();
+            }
+        }
+
+        function pauseTimer() {
+            console.log('pauseTimer called, gymTimer exists:', !!gymTimer);
+            if (gymTimer && gymTimer.isSetActive && !gymTimer.isResting) {
+                gymTimer.pauseTimer();
+            } else {
+                console.log('Cannot pause - not in active set or gymTimer not ready');
+            }
+        }
+
+        function             undoLastSet() {
+                if (this.currentWorkoutSets.length === 0) {
+                    alert('No sets to undo');
+                    return;
+                }
+                
+                if (confirm('Undo the last set?')) {
+                    const lastSet = this.currentWorkoutSets.pop();
+                    this.totalWorkoutTime -= lastSet.duration;
+                    this.setsCount--;
+                    
+                    // If we're currently resting, stop the rest timer and go back to set mode
+                    if (this.isResting) {
+                        if (this.restTimer) {
+                            clearInterval(this.restTimer);
+                            this.restTimer = null;
+                        }
+                        this.isResting = false;
+                        this.isPaused = false;
+                        document.getElementById('restNotification').style.display = 'none';
+                        document.getElementById('stopBtn').textContent = 'Stop Set';
+                        document.getElementById('pauseBtn').textContent = 'Pause';
+                        document.getElementById('stopBtn').onclick = () => this.stopTimer();
+                    }
+                    
+                    // Update display
+                    if (this.setsCount === 0) {
+                        document.getElementById('timerType').textContent = 'Ready to Start';
+                        document.getElementById('timerDisplay').textContent = '00:00';
+                    } else {
+                        document.getElementById('timerType').textContent = `Set ${this.setsCount}`;
+                        this.startTimer();
+                    }
+                    
+                    this.updateDisplays();
+                }
+            }
+            if (gymTimer) {
+                gymTimer.deleteWorkout(index);
+            }
+        }
+
+        function clearLogs() {
+            gymTimer.clearLogs();
+        }
+
+        // Initialize the app when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            gymTimer = new GymTimer();
+            
+            // Update displays every second when workout is active
+            setInterval(() => {
+                if (gymTimer.isWorkoutActive) {
+                    gymTimer.updateDisplays();
+                }
+            }, 1000);
+
+            // Handle scroll to hide/show menu bar
+            let scrollTimeout;
+            const container = document.querySelector('.container');
+            container.addEventListener('scroll', function() {
+                const tabs = document.querySelector('.tabs');
+                const currentScrollTop = container.scrollTop;
+                
+                clearTimeout(scrollTimeout);
+                
+                if (currentScrollTop > lastScrollTop && currentScrollTop > 50) {
+                    // Scrolling down
+                    tabs.classList.add('hidden');
+                } else {
+                    // Scrolling up
+                    tabs.classList.remove('hidden');
+                }
+                
+                // Show tabs after scrolling stops
+                scrollTimeout = setTimeout(() => {
+                    tabs.classList.remove('hidden');
+                }, 2000);
+                
+                lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
+            });
+        });
+
+        // Prevent accidental page refresh during workout
+        window.addEventListener('beforeunload', function(e) {
+            if (gymTimer && gymTimer.isWorkoutActive) {
+                e.preventDefault();
+                e.returnValue = 'You have an active workout. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +283,7 @@
             top: 0;
             left: 0;
             padding: 20px 10px;
-            padding-bottom: 100px;
+            padding-bottom: 80px;
             overflow-y: auto;
             overflow-x: hidden;
             background: #1a1a1a;
@@ -60,20 +309,16 @@
             padding: 4px;
             margin-bottom: 20px;
             position: fixed;
-            bottom: 30px;
+            bottom: 20px;
             left: 10px;
             right: 10px;
             z-index: 100;
-            transition: transform 0.3s ease, opacity 0.3s ease, bottom 0.3s ease;
+            transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
         .tabs.hidden {
-            transform: translateY(100%);
+            transform: translateY(100px);
             opacity: 0;
-        }
-
-        .tabs.lowered {
-            bottom: 10px;
         }
 
         .tab {
@@ -339,9 +584,9 @@
         </div>
 
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('timer', this)">Timer</div>
-            <div class="tab" onclick="switchTab('analytics', this)">Analytics</div>
-            <div class="tab" onclick="switchTab('logs', this)">Workout Log</div>
+            <div class="tab active" onclick="switchTab('timer')">Timer</div>
+            <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+            <div class="tab" onclick="switchTab('logs')">Workout Log</div>
         </div>
 
         <!-- Timer Tab -->
@@ -361,7 +606,6 @@
                     </div>
                     <div style="display: flex; gap: 12px; width: 100%;">
                         <button class="btn btn-warning" onclick="endWorkout()" style="display: none; flex: 1; min-width: auto;" id="endBtn">End Workout</button>
-                        <button class="btn btn-warning" id="undoBtn" onclick="undoLastSet()" style="display: none; flex: 1; min-width: auto;">Undo Last Set</button>
                     </div>
                 </div>
             </div>
@@ -492,7 +736,6 @@
                 this.setStartTime = null;
                 this.workoutStartTime = null;
                 this.pausedTime = 0;
-                this.pauseStartTime = null;
                 this.totalWorkoutTime = 0;
                 this.totalRestTime = 0;
                 this.setsCount = 0;
@@ -570,7 +813,6 @@
                 document.getElementById('stopBtn').style.display = 'inline-block';
                 document.getElementById('pauseBtn').style.display = 'inline-block';
                 document.getElementById('endBtn').style.display = 'inline-block';
-                document.getElementById('undoBtn').style.display = 'inline-block';
             }
 
             startSet() {
@@ -578,13 +820,11 @@
                 this.isResting = false;
                 this.isPaused = false;
                 this.pausedTime = 0;
-                this.pauseStartTime = null;
                 this.setStartTime = Date.now();
                 this.setsCount++;
                 
                 document.getElementById('timerType').textContent = `Set ${this.setsCount}`;
                 document.getElementById('restNotification').style.display = 'none';
-                document.getElementById('pauseBtn').textContent = 'Pause';
                 
                 this.startTimer();
             }
@@ -598,28 +838,6 @@
                         document.getElementById('timerDisplay').textContent = this.formatTime(elapsed);
                     }
                 }, 100);
-            }
-
-            pauseTimer() {
-                if (!this.isSetActive || this.isResting) {
-                    console.log('Cannot pause - not in active set or currently resting');
-                    return;
-                }
-
-                if (this.isPaused) {
-                    // Resume
-                    this.pausedTime += Date.now() - this.pauseStartTime;
-                    this.isPaused = false;
-                    this.pauseStartTime = null;
-                    document.getElementById('pauseBtn').textContent = 'Pause';
-                    console.log('Timer resumed');
-                } else {
-                    // Pause
-                    this.isPaused = true;
-                    this.pauseStartTime = Date.now();
-                    document.getElementById('pauseBtn').textContent = 'Resume';
-                    console.log('Timer paused');
-                }
             }
 
             stopTimer() {
@@ -642,7 +860,6 @@
                 this.isSetActive = false;
                 this.isPaused = false;
                 this.pausedTime = 0;
-                this.pauseStartTime = null;
                 this.startRestTimer();
                 
                 if (this.timer) {
@@ -658,7 +875,6 @@
                 const restStartTime = Date.now();
                 
                 document.getElementById('timerType').textContent = 'Rest Time';
-                document.getElementById('pauseBtn').textContent = 'Pause';
                 
                 this.restTimer = setInterval(() => {
                     const elapsed = Math.floor((Date.now() - restStartTime) / 1000);
@@ -691,69 +907,22 @@
                 };
             }
 
-            undoLastSet() {
-                if (this.currentWorkoutSets.length === 0) {
-                    alert('No sets to undo');
-                    return;
-                }
-                
-                if (confirm('Undo the last set?')) {
-                    const lastSet = this.currentWorkoutSets.pop();
-                    this.totalWorkoutTime -= lastSet.duration;
-                    this.setsCount--;
-                    
-                    // If we're currently resting, stop the rest timer and go back to set mode
-                    if (this.isResting) {
-                        if (this.restTimer) {
-                            clearInterval(this.restTimer);
-                            this.restTimer = null;
-                        }
-                        this.isResting = false;
-                        this.isPaused = false;
-                        this.pauseStartTime = null;
-                        document.getElementById('restNotification').style.display = 'none';
-                        document.getElementById('stopBtn').textContent = 'Stop Set';
-                        document.getElementById('pauseBtn').textContent = 'Pause';
-                        document.getElementById('stopBtn').onclick = () => this.stopTimer();
-                    }
-                    
-                    // Update display
-                    if (this.setsCount === 0) {
-                        document.getElementById('timerType').textContent = 'Ready to Start';
-                        document.getElementById('timerDisplay').textContent = '00:00';
-                        if (this.timer) {
-                            clearInterval(this.timer);
-                            this.timer = null;
-                        }
-                        this.isSetActive = false;
-                    } else {
-                        document.getElementById('timerType').textContent = `Set ${this.setsCount}`;
-                        this.startTimer();
-                    }
-                    
-                    this.updateDisplays();
-                }
-            }
-
             playNotificationSound() {
-                try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.value = 800;
-                    oscillator.type = 'square';
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.5);
-                } catch (e) {
-                    console.log('Audio notification not available');
-                }
+                // Create a simple beep sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'square';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
             }
 
             endWorkout() {
@@ -842,7 +1011,6 @@
                 this.isResting = false;
                 this.isPaused = false;
                 this.pausedTime = 0;
-                this.pauseStartTime = null;
                 this.totalWorkoutTime = 0;
                 this.totalRestTime = 0;
                 this.setsCount = 0;
@@ -855,7 +1023,170 @@
                 document.getElementById('stopBtn').style.display = 'none';
                 document.getElementById('pauseBtn').style.display = 'none';
                 document.getElementById('endBtn').style.display = 'none';
-                document.getElementById('undoBtn').style.display = 'none';
                 document.getElementById('stopBtn').textContent = 'Stop Set';
                 document.getElementById('pauseBtn').textContent = 'Pause';
                 document.getElementById('stopBtn').onclick = () => this.stopTimer();
+                
+                this.updateDisplays();
+            }
+
+            updateDisplays() {
+                const today = this.getDateKey();
+                const todayStats = this.workoutData.dailyStats[today] || 
+                    { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                
+                document.getElementById('currentSets').textContent = 
+                    todayStats.sets + (this.isWorkoutActive ? this.setsCount : 0);
+                document.getElementById('currentWorkoutTime').textContent = 
+                    this.formatTime(todayStats.workoutTime + this.totalWorkoutTime);
+                document.getElementById('currentRestTime').textContent = 
+                    this.formatTime(todayStats.restTime + this.totalRestTime);
+                document.getElementById('totalGymTime').textContent = 
+                    this.formatTime(todayStats.totalTime + (this.isWorkoutActive ? 
+                        Math.floor((Date.now() - this.workoutStartTime) / 1000) : 0));
+            }
+
+            updateAnalytics() {
+                const today = this.getDateKey();
+                const thisWeek = this.getWeekKey();
+                const thisMonth = this.getMonthKey();
+                
+                const dailyStats = this.workoutData.dailyStats[today] || 
+                    { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                const weeklyStats = this.workoutData.weeklyStats[thisWeek] || 
+                    { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                const monthlyStats = this.workoutData.monthlyStats[thisMonth] || 
+                    { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
+                
+                // Daily
+                document.getElementById('dailyTotal').textContent = this.formatTime(dailyStats.totalTime);
+                document.getElementById('dailyWorkout').textContent = this.formatTime(dailyStats.workoutTime);
+                document.getElementById('dailyRest').textContent = this.formatTime(dailyStats.restTime);
+                document.getElementById('dailySets').textContent = dailyStats.sets;
+                
+                // Weekly
+                document.getElementById('weeklyTotal').textContent = this.formatTime(weeklyStats.totalTime);
+                document.getElementById('weeklyWorkout').textContent = this.formatTime(weeklyStats.workoutTime);
+                document.getElementById('weeklyRest').textContent = this.formatTime(weeklyStats.restTime);
+                document.getElementById('weeklySets').textContent = weeklyStats.sets;
+                
+                // Monthly
+                document.getElementById('monthlyTotal').textContent = this.formatTime(monthlyStats.totalTime);
+                document.getElementById('monthlyWorkout').textContent = this.formatTime(monthlyStats.workoutTime);
+                document.getElementById('monthlyRest').textContent = this.formatTime(monthlyStats.restTime);
+                document.getElementById('monthlySets').textContent = monthlyStats.sets;
+                
+                // All-time
+                document.getElementById('longestWorkout').textContent = 
+                    this.formatTime(this.workoutData.allTimeStats.longestWorkout);
+                document.getElementById('mostSets').textContent = this.workoutData.allTimeStats.mostSets;
+                document.getElementById('totalWorkouts').textContent = this.workoutData.allTimeStats.totalWorkouts;
+            }
+
+            loadLogs() {
+                const logsContainer = document.getElementById('workoutLogs');
+                
+                if (this.workoutData.workoutLogs.length === 0) {
+                    logsContainer.innerHTML = '<p style="opacity: 0.6; text-align: center;">No workouts logged yet. Start your first workout!</p>';
+                    return;
+                }
+                
+                logsContainer.innerHTML = this.workoutData.workoutLogs.slice(0, 20).map((log, index) => {
+                    const date = new Date(log.date);
+                    const dateStr = date.toLocaleDateString();
+                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    return `
+                        <div class="log-entry">
+                            <div class="log-header">
+                                <div>
+                                    <div>Workout - ${dateStr}</div>
+                                    <div style="font-size: 0.9rem; opacity: 0.7; font-weight: normal;">${timeStr}</div>
+                                </div>
+                                <button class="delete-btn" onclick="deleteWorkout(${index})">Delete</button>
+                            </div>
+                            <div class="log-details">
+                                <strong>Total Time:</strong> ${this.formatTime(log.totalTime)} | 
+                                <strong>Workout:</strong> ${this.formatTime(log.workoutTime)} | 
+                                <strong>Rest:</strong> ${this.formatTime(log.restTime)} | 
+                                <strong>Sets:</strong> ${log.sets}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            clearLogs() {
+                if (confirm('Are you sure you want to clear all workout data? This cannot be undone.')) {
+                    this.workoutData = {
+                        dailyStats: {},
+                        weeklyStats: {},
+                        monthlyStats: {},
+                        allTimeStats: { longestWorkout: 0, mostSets: 0, totalWorkouts: 0 },
+                        workoutLogs: []
+                    };
+                    this.saveData();
+                    this.updateAnalytics();
+                    this.loadLogs();
+                }
+            }
+        }
+
+        // Global functions
+        let gymTimer;
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'analytics') {
+                gymTimer.updateAnalytics();
+            } else if (tabName === 'logs') {
+                gymTimer.loadLogs();
+            }
+        }
+
+        function startWorkout() {
+            gymTimer.startWorkout();
+        }
+
+        function stopTimer() {
+            gymTimer.stopTimer();
+        }
+
+        function endWorkout() {
+            if (confirm('Are you sure you want to end this workout?')) {
+                gymTimer.endWorkout();
+            }
+        }
+
+        function clearLogs() {
+            gymTimer.clearLogs();
+        }
+
+        // Initialize the app when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            gymTimer = new GymTimer();
+            
+            // Update displays every second when workout is active
+            setInterval(() => {
+                if (gymTimer.isWorkoutActive) {
+                    gymTimer.updateDisplays();
+                }
+            }, 1000);
+        });
+
+        // Prevent accidental page refresh during workout
+        window.addEventListener('beforeunload', function(e) {
+            if (gymTimer && gymTimer.isWorkoutActive) {
+                e.preventDefault();
+                e.returnValue = 'You have an active workout. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html>
