@@ -496,6 +496,7 @@
                 this.restStartTime = null;
 
                 this.pausedTime = 0;
+                this.pausedRestTime = 0; // New property for paused rest time
                 this.totalWorkoutTime = 0;
                 this.totalRestTime = 0;
                 this.setsCount = 0;
@@ -623,7 +624,8 @@
             }
             
             pauseTimer() {
-                if (!this.isSetActive || this.isResting) return;
+                // Can only pause if a workout is active and we are in a set or resting.
+                if (!this.isWorkoutActive || (!this.isSetActive && !this.isResting)) return;
 
                 this.isPaused = !this.isPaused;
 
@@ -631,7 +633,12 @@
                     this.pauseStartTime = Date.now();
                     document.getElementById('pauseBtn').textContent = 'Resume';
                 } else {
-                    this.pausedTime += Date.now() - this.pauseStartTime;
+                    const pauseDuration = Date.now() - this.pauseStartTime;
+                    if (this.isSetActive) {
+                        this.pausedTime += pauseDuration;
+                    } else if (this.isResting) {
+                        this.pausedRestTime += pauseDuration;
+                    }
                     document.getElementById('pauseBtn').textContent = 'Pause';
                 }
             }
@@ -639,25 +646,34 @@
             startRestTimer() {
                 this.isResting = true;
                 this.restStartTime = Date.now();
+                this.pausedRestTime = 0; // Reset paused time for the new rest period
                 
                 document.getElementById('timerType').textContent = 'Rest Time';
                 
+                let notificationFired = false;
                 if (this.restTimer) clearInterval(this.restTimer);
-                this.restTimer = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - this.restStartTime) / 1000);
-                    document.getElementById('timerDisplay').textContent = this.formatTime(elapsed);
-                }, 100);
 
-                setTimeout(() => {
-                    if (this.isResting) {
-                        document.getElementById('restNotification').style.display = 'block';
-                        this.playNotificationSound();
+                this.restTimer = setInterval(() => {
+                    if (!this.isPaused) {
+                        const elapsed = Math.floor((Date.now() - this.restStartTime - this.pausedRestTime) / 1000);
+                        document.getElementById('timerDisplay').textContent = this.formatTime(elapsed);
+
+                        // Check for notification
+                        if (elapsed >= 60 && !notificationFired) {
+                            if (this.isResting) { // Double-check state
+                                document.getElementById('restNotification').style.display = 'block';
+                                this.playNotificationSound();
+                                notificationFired = true; // Fire only once per rest period
+                            }
+                        }
                     }
-                }, 60000);
+                }, 100);
 
                 document.getElementById('stopBtn').textContent = 'Start Next Set';
                 document.getElementById('stopBtn').onclick = () => {
-                    const restDuration = Math.floor((Date.now() - this.restStartTime) / 1000);
+                    if(this.isPaused) this.pauseTimer(); // Unpause if paused
+                    
+                    const restDuration = Math.floor((Date.now() - this.restStartTime - this.pausedRestTime) / 1000);
                     this.totalRestTime += restDuration;
                     
                     if (this.restTimer) clearInterval(this.restTimer);
@@ -675,7 +691,7 @@
                 if (this.restTimer) clearInterval(this.restTimer);
                 
                 if (this.isResting && this.restStartTime) {
-                    const restDuration = Math.floor((Date.now() - this.restStartTime) / 1000);
+                    const restDuration = Math.floor((Date.now() - this.restStartTime - this.pausedRestTime) / 1000);
                     this.totalRestTime += restDuration;
                 }
                 
