@@ -55,7 +55,7 @@
             font-weight: 700;
         }
         
-        /* Default style for the tab bar: fixed to the bottom */
+        /* The tab bar is now always fixed to the bottom */
         .tabs {
             display: flex;
             background: #2a2a2a;
@@ -67,16 +67,6 @@
             right: 10px;
             z-index: 100;
             transition: all 0.3s ease;
-        }
-        
-        /* Modifier class for when the bar is inside the Analytics content */
-        .tabs.is-inline {
-            position: relative;
-            bottom: auto;
-            left: auto;
-            right: auto;
-            margin: 30px 0 10px 0;
-            z-index: 1;
         }
 
         .tab {
@@ -100,11 +90,6 @@
             animation: fadeIn 0.5s ease;
             overflow: hidden;
             word-wrap: break-word;
-        }
-
-        /* Add extra scroll space specifically to the Analytics tab */
-        #analytics {
-            padding-bottom: 100px;
         }
 
         .tab-content.active {
@@ -1012,21 +997,9 @@
             const tabIndex = gymTimer.tabs.indexOf(tabName);
             if (tabIndex === -1) return;
             gymTimer.currentTabIndex = tabIndex;
-
-            // Handle moving the tab bar element
+            
+            // Simplified: The bar is always fixed, so we just update its state
             const tabs = document.querySelector('.tabs');
-            const analyticsContainer = document.getElementById('analytics');
-            const body = document.body;
-
-            if (tabName === 'analytics') {
-                analyticsContainer.appendChild(tabs);
-                tabs.classList.add('is-inline');
-            } else {
-                body.appendChild(tabs);
-                tabs.classList.remove('is-inline');
-            }
-
-            // Update the 'active' class on the single tab bar
             tabs.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const newActiveTab = tabs.querySelector(`[onclick="switchTab('${tabName}')"]`);
             if (newActiveTab) newActiveTab.classList.add('active');
@@ -1057,7 +1030,6 @@
         // --- Initialize App ---
         document.addEventListener('DOMContentLoaded', function() {
             gymTimer = new GymTimer();
-            switchTab('timer'); 
             
             setInterval(() => {
                 if (gymTimer && gymTimer.isWorkoutActive) {
