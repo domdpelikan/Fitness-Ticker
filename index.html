@@ -44,27 +44,38 @@
             text-align: center;
             margin-bottom: 20px;
             padding: 10px 0;
-            position: relative; /* Anchor for the tab indicator */
-        }
-
-        /* NEW: Style for the tab indicator in the top-left */
-        #tab-indicator {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: capitalize;
+            position: relative;
         }
 
         .header h1 {
             font-size: 2rem;
             margin-bottom: 8px;
             font-weight: 700;
+        }
+        
+        /* REVERTED: Styles for the tab bar, now part of the content flow */
+        .tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 4px;
+            margin: 30px 0 10px 0; /* Add space above and below */
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            background: #007AFF;
+            color: white;
         }
 
         .tab-content {
@@ -319,7 +330,6 @@
 <body>
     <div class="container">
         <div class="header">
-            <div id="tab-indicator">Timer</div>
             <h1>Fitness Ticker</h1>
             <p>Track your workouts, rest periods, and fitness analytics</p>
         </div>
@@ -360,6 +370,12 @@
                     <div class="stat-value" id="totalGymTime">00:00</div>
                     <div class="stat-label">Total Gym Time</div>
                 </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('timer')">Timer</div>
+                <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+                <div class="tab" onclick="switchTab('logs')">Workout Log</div>
             </div>
         </div>
 
@@ -441,6 +457,12 @@
                     </div>
                 </div>
             </div>
+            
+            <div class="tabs">
+                <div class="tab" onclick="switchTab('timer')">Timer</div>
+                <div class="tab active" onclick="switchTab('analytics')">Analytics</div>
+                <div class="tab" onclick="switchTab('logs')">Workout Log</div>
+            </div>
         </div>
 
         <div id="logs" class="tab-content">
@@ -452,6 +474,12 @@
                 <div class="clear-logs">
                     <button class="btn btn-danger" onclick="clearLogs()">Clear All Logs</button>
                 </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab" onclick="switchTab('timer')">Timer</div>
+                <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+                <div class="tab active" onclick="switchTab('logs')">Workout Log</div>
             </div>
         </div>
     </div>
@@ -484,7 +512,7 @@
                 this.workoutData = this.loadData();
                 this.currentWorkoutSets = [];
 
-                // NEW: Swipe navigation state
+                // Swipe navigation state
                 this.tabs = ['timer', 'analytics', 'logs'];
                 this.currentTabIndex = 0;
                 this.touchStartX = 0;
@@ -497,7 +525,7 @@
                 this.loadLogs();
             }
             
-            // --- NEW: Swipe Navigation Methods ---
+            // --- Swipe Navigation Methods ---
             setupSwipeListeners() {
                 const container = document.querySelector('.container');
                 container.addEventListener('touchstart', (e) => this.handleTouchStart(e), false);
@@ -518,31 +546,19 @@
                 const swipeDistance = this.touchEndX - this.touchStartX;
 
                 if (swipeDistance < -swipeThreshold) { // Swipe Left
-                    this.switchTab(this.currentTabIndex + 1);
+                    const nextIndex = this.currentTabIndex + 1;
+                    if (nextIndex < this.tabs.length) {
+                        switchTab(this.tabs[nextIndex]);
+                    }
                 } else if (swipeDistance > swipeThreshold) { // Swipe Right
-                    this.switchTab(this.currentTabIndex - 1);
+                    const prevIndex = this.currentTabIndex - 1;
+                    if (prevIndex >= 0) {
+                        switchTab(this.tabs[prevIndex]);
+                    }
                 }
             }
-            
-            switchTab(tabIndex) {
-                if (tabIndex < 0 || tabIndex >= this.tabs.length) return; // Boundary check
 
-                this.currentTabIndex = tabIndex;
-                const newTabName = this.tabs[this.currentTabIndex];
-
-                // Update the visual content
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                document.getElementById(newTabName).classList.add('active');
-
-                // Update the indicator text
-                document.getElementById('tab-indicator').textContent = newTabName;
-
-                // Run tab-specific updates
-                if (newTabName === 'analytics') this.updateAnalytics();
-                else if (newTabName === 'logs') this.loadLogs();
-            }
-
-            // --- Core Timer and Data Logic (largely unchanged) ---
+            // --- Core Timer and Data Logic ---
 
             loadData() {
                 const stored = localStorage.getItem('gymTimerData');
@@ -991,8 +1007,37 @@
             }
         }
 
-        // --- Global Functions to Connect HTML to Class ---
+        // --- Global Functions ---
         let gymTimer;
+        
+        // NEW: Global switchTab function for both clicks and swipes
+        function switchTab(tabName) {
+            if (!gymTimer) return;
+
+            const tabIndex = gymTimer.tabs.indexOf(tabName);
+            if (tabIndex === -1) return;
+            gymTimer.currentTabIndex = tabIndex;
+
+            // Update the active class on ALL three tab bars
+            document.querySelectorAll('.tabs').forEach(tabBar => {
+                tabBar.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                const newActiveTab = tabBar.querySelector(`[onclick="switchTab('${tabName}')"]`);
+                if (newActiveTab) {
+                    newActiveTab.classList.add('active');
+                }
+            });
+
+            // Update the visible content pane
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            
+            // Run tab-specific updates
+            if (tabName === 'analytics') {
+                gymTimer.updateAnalytics();
+            } else if (tabName === 'logs') {
+                gymTimer.loadLogs();
+            }
+        }
 
         function startWorkout() { if (gymTimer) gymTimer.startWorkout(); }
         function stopTimer() { if (gymTimer) gymTimer.stopTimer(); }
@@ -1009,6 +1054,7 @@
         // --- Initialize App ---
         document.addEventListener('DOMContentLoaded', function() {
             gymTimer = new GymTimer();
+            switchTab('timer'); // Set initial state correctly
             
             // Global display updater
             setInterval(() => {
