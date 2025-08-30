@@ -34,7 +34,6 @@
             top: 0;
             left: 0;
             padding: 20px 10px;
-            padding-bottom: 80px;
             overflow-y: auto;
             overflow-x: hidden;
             background: #1a1a1a;
@@ -45,47 +44,27 @@
             text-align: center;
             margin-bottom: 20px;
             padding: 10px 0;
+            position: relative; /* Anchor for the tab indicator */
+        }
+
+        /* NEW: Style for the tab indicator in the top-left */
+        #tab-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: capitalize;
         }
 
         .header h1 {
             font-size: 2rem;
             margin-bottom: 8px;
             font-weight: 700;
-        }
-
-        .tabs {
-            display: flex;
-            background: #2a2a2a;
-            border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 20px;
-            position: fixed;
-            bottom: 20px;
-            left: 10px;
-            right: 10px;
-            z-index: 100;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .tabs.hidden {
-            transform: translateY(100px);
-            opacity: 0;
-        }
-
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .tab.active {
-            background: #007AFF;
-            color: white;
         }
 
         .tab-content {
@@ -332,7 +311,7 @@
             
             .container {
                 padding: 15px;
-                padding-bottom: 90px;
+                padding-bottom: 15px;
             }
         }
     </style>
@@ -340,14 +319,9 @@
 <body>
     <div class="container">
         <div class="header">
+            <div id="tab-indicator">Timer</div>
             <h1>Fitness Ticker</h1>
             <p>Track your workouts, rest periods, and fitness analytics</p>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('timer')">Timer</div>
-            <div class="tab" onclick="switchTab('analytics')">Analytics</div>
-            <div class="tab" onclick="switchTab('logs')">Workout Log</div>
         </div>
 
         <div id="timer" class="tab-content active">
@@ -485,32 +459,90 @@
     <script>
         class GymTimer {
             constructor() {
+                // State properties
                 this.isWorkoutActive = false;
                 this.isSetActive = false;
                 this.isResting = false;
                 this.isPaused = false;
                 
+                // Time tracking
                 this.setStartTime = null;
                 this.workoutStartTime = null;
                 this.pauseStartTime = null;
                 this.restStartTime = null;
-
                 this.pausedTime = 0;
-                this.pausedRestTime = 0; // New property for paused rest time
+                this.pausedRestTime = 0;
                 this.totalWorkoutTime = 0;
                 this.totalRestTime = 0;
                 this.setsCount = 0;
                 
+                // Timers
                 this.timer = null;
                 this.restTimer = null;
                 
+                // Data and logs
                 this.workoutData = this.loadData();
                 this.currentWorkoutSets = [];
+
+                // NEW: Swipe navigation state
+                this.tabs = ['timer', 'analytics', 'logs'];
+                this.currentTabIndex = 0;
+                this.touchStartX = 0;
+                this.touchEndX = 0;
                 
+                // Initialize UI and event listeners
+                this.setupSwipeListeners();
                 this.updateDisplays();
                 this.updateAnalytics();
                 this.loadLogs();
             }
+            
+            // --- NEW: Swipe Navigation Methods ---
+            setupSwipeListeners() {
+                const container = document.querySelector('.container');
+                container.addEventListener('touchstart', (e) => this.handleTouchStart(e), false);
+                container.addEventListener('touchend', (e) => this.handleTouchEnd(e), false);
+            }
+
+            handleTouchStart(event) {
+                this.touchStartX = event.changedTouches[0].screenX;
+            }
+
+            handleTouchEnd(event) {
+                this.touchEndX = event.changedTouches[0].screenX;
+                this.handleSwipe();
+            }
+
+            handleSwipe() {
+                const swipeThreshold = 50; // Min pixels for a swipe
+                const swipeDistance = this.touchEndX - this.touchStartX;
+
+                if (swipeDistance < -swipeThreshold) { // Swipe Left
+                    this.switchTab(this.currentTabIndex + 1);
+                } else if (swipeDistance > swipeThreshold) { // Swipe Right
+                    this.switchTab(this.currentTabIndex - 1);
+                }
+            }
+            
+            switchTab(tabIndex) {
+                if (tabIndex < 0 || tabIndex >= this.tabs.length) return; // Boundary check
+
+                this.currentTabIndex = tabIndex;
+                const newTabName = this.tabs[this.currentTabIndex];
+
+                // Update the visual content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(newTabName).classList.add('active');
+
+                // Update the indicator text
+                document.getElementById('tab-indicator').textContent = newTabName;
+
+                // Run tab-specific updates
+                if (newTabName === 'analytics') this.updateAnalytics();
+                else if (newTabName === 'logs') this.loadLogs();
+            }
+
+            // --- Core Timer and Data Logic (largely unchanged) ---
 
             loadData() {
                 const stored = localStorage.getItem('gymTimerData');
@@ -624,7 +656,6 @@
             }
             
             pauseTimer() {
-                // Can only pause if a workout is active and we are in a set or resting.
                 if (!this.isWorkoutActive || (!this.isSetActive && !this.isResting)) return;
 
                 this.isPaused = !this.isPaused;
@@ -646,7 +677,7 @@
             startRestTimer() {
                 this.isResting = true;
                 this.restStartTime = Date.now();
-                this.pausedRestTime = 0; // Reset paused time for the new rest period
+                this.pausedRestTime = 0; 
                 
                 document.getElementById('timerType').textContent = 'Rest Time';
                 
@@ -658,12 +689,11 @@
                         const elapsed = Math.floor((Date.now() - this.restStartTime - this.pausedRestTime) / 1000);
                         document.getElementById('timerDisplay').textContent = this.formatTime(elapsed);
 
-                        // Check for notification
                         if (elapsed >= 60 && !notificationFired) {
-                            if (this.isResting) { // Double-check state
+                            if (this.isResting) {
                                 document.getElementById('restNotification').style.display = 'block';
                                 this.playNotificationSound();
-                                notificationFired = true; // Fire only once per rest period
+                                notificationFired = true; 
                             }
                         }
                     }
@@ -671,7 +701,7 @@
 
                 document.getElementById('stopBtn').textContent = 'Start Next Set';
                 document.getElementById('stopBtn').onclick = () => {
-                    if(this.isPaused) this.pauseTimer(); // Unpause if paused
+                    if(this.isPaused) this.pauseTimer(); 
                     
                     const restDuration = Math.floor((Date.now() - this.restStartTime - this.pausedRestTime) / 1000);
                     this.totalRestTime += restDuration;
@@ -702,7 +732,7 @@
             }
 
             saveWorkoutData(totalDuration) {
-                if (this.setsCount === 0) return; // Don't save empty workouts
+                if (this.setsCount === 0) return;
                 const now = new Date();
                 const dateKey = this.getDateKey(now);
                 const weekKey = this.getWeekKey(now);
@@ -892,7 +922,7 @@
             }
 
             recalculateAllStats() {
-                const logs = [...this.workoutData.workoutLogs].reverse(); // Oldest to newest
+                const logs = [...this.workoutData.workoutLogs].reverse(); 
                 
                 this.workoutData.dailyStats = {};
                 this.workoutData.weeklyStats = {};
@@ -961,21 +991,8 @@
             }
         }
 
-        // --- Global Functions ---
+        // --- Global Functions to Connect HTML to Class ---
         let gymTimer;
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.currentTarget.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            
-            if (gymTimer) {
-                if (tabName === 'analytics') gymTimer.updateAnalytics();
-                else if (tabName === 'logs') gymTimer.loadLogs();
-            }
-        }
 
         function startWorkout() { if (gymTimer) gymTimer.startWorkout(); }
         function stopTimer() { if (gymTimer) gymTimer.stopTimer(); }
@@ -993,34 +1010,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             gymTimer = new GymTimer();
             
+            // Global display updater
             setInterval(() => {
                 if (gymTimer && gymTimer.isWorkoutActive) {
                     gymTimer.updateDisplays();
                 }
             }, 1000);
-
-            // Handle scroll to hide/show menu bar
-            let lastScrollTop = 0;
-            let scrollTimeout;
-            const container = document.querySelector('.container');
-            container.addEventListener('scroll', function() {
-                const tabs = document.querySelector('.tabs');
-                const currentScrollTop = container.scrollTop;
-                
-                clearTimeout(scrollTimeout);
-                
-                if (currentScrollTop > lastScrollTop && currentScrollTop > 50) {
-                    tabs.classList.add('hidden'); // Scrolling down
-                } else {
-                    tabs.classList.remove('hidden'); // Scrolling up
-                }
-                
-                scrollTimeout = setTimeout(() => {
-                    tabs.classList.remove('hidden');
-                }, 2000);
-                
-                lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
-            });
         });
 
         window.addEventListener('beforeunload', function(e) {
