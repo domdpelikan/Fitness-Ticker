@@ -34,7 +34,6 @@
             top: 0;
             left: 0;
             padding: 20px 10px;
-            /* Add padding to prevent fixed tab bar from covering content */
             padding-bottom: 80px;
             overflow-y: auto;
             overflow-x: hidden;
@@ -91,7 +90,6 @@
             word-wrap: break-word;
         }
 
-        /* NEW: Adds extra scroll space specifically to the Analytics tab */
         #analytics {
             padding-bottom: 100px;
         }
@@ -105,7 +103,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Timer Section */
         .timer-card {
             background: #2a2a2a;
             border-radius: 16px;
@@ -216,7 +213,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Analytics Section */
         .analytics-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -248,7 +244,6 @@
             border-bottom: none;
         }
 
-        /* Log Section */
         .log-entry {
             background: #2a2a2a;
             border-radius: 12px;
@@ -358,14 +353,16 @@
                         <button class="btn btn-danger" id="stopBtn" onclick="stopTimer()" style="display: none; flex: 1;">Stop Set</button>
                         <button class="btn btn-warning" id="pauseBtn" onclick="pauseTimer()" style="display: none; flex: 1;">Pause</button>
                     </div>
-                    <button class="btn btn-danger" onclick="endWorkout()" style="display: none;" id="endBtn">End Workout</button>
-                    <button class="btn btn-secondary" onclick="undoLastSet()" style="display: none;" id="undoBtn">Undo Last Set</button>
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <button class="btn btn-danger" id="endBtn" onclick="endWorkout()" style="display: none; flex: 1;">End Workout</button>
+                        <button class="btn btn-secondary" id="undoBtn" onclick="undoLastSet()" style="display: none; flex: 1;">Undo Last Set</button>
+                    </div>
                 </div>
             </div>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-value" id="currentSets">0</div>
-                    <div class="stat-label">Sets Today</div>
+                    <div class="stat-label">Current Sets</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="currentWorkoutTime">00:00</div>
@@ -377,14 +374,14 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="totalGymTime">00:00</div>
-                    <div class="stat-label">Total Gym Time</div>
+                    <div class="stat-label">Total Time</div>
                 </div>
             </div>
         </div>
 
         <div id="analytics" class="tab-content">
             <div class="analytics-grid">
-                <div class="analytics-card">
+                 <div class="analytics-card">
                     <h3>Daily Stats</h3>
                     <div class="metric">
                         <span>Total Gym Time:</span>
@@ -532,12 +529,12 @@
                 const swipeThreshold = 50; 
                 const swipeDistance = this.touchEndX - this.touchStartX;
 
-                if (swipeDistance < -swipeThreshold) { // Swipe Left
+                if (swipeDistance < -swipeThreshold) {
                     const nextIndex = this.currentTabIndex + 1;
                     if (nextIndex < this.tabs.length) {
                         switchTab(this.tabs[nextIndex]);
                     }
-                } else if (swipeDistance > swipeThreshold) { // Swipe Right
+                } else if (swipeDistance > swipeThreshold) {
                     const prevIndex = this.currentTabIndex - 1;
                     if (prevIndex >= 0) {
                         switchTab(this.tabs[prevIndex]);
@@ -596,6 +593,7 @@
                 this.currentWorkoutSets = [];
                 
                 this.startSet();
+                this.updateDisplays(); // Refresh display to show 1 set starting
                 
                 document.getElementById('startBtn').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'inline-block';
@@ -813,7 +811,6 @@
                 this.isSetActive = false;
                 this.isResting = false;
                 this.isPaused = false;
-                this.pausedTime = 0;
                 this.totalWorkoutTime = 0;
                 this.totalRestTime = 0;
                 this.setsCount = 0;
@@ -836,18 +833,12 @@
             }
 
             updateDisplays() {
-                const today = this.getDateKey();
-                const todayStats = this.workoutData.dailyStats[today] || { totalTime: 0, workoutTime: 0, restTime: 0, sets: 0 };
-                
-                const currentTotalSets = todayStats.sets + this.setsCount;
-                const currentWorkoutTime = todayStats.workoutTime + this.totalWorkoutTime;
-                const currentRestTime = todayStats.restTime + this.totalRestTime;
-                const currentGymTime = todayStats.totalTime + (this.isWorkoutActive ? Math.floor((Date.now() - this.workoutStartTime) / 1000) : 0);
-                
-                document.getElementById('currentSets').textContent = currentTotalSets;
-                document.getElementById('currentWorkoutTime').textContent = this.formatTime(currentWorkoutTime);
-                document.getElementById('currentRestTime').textContent = this.formatTime(currentRestTime);
-                document.getElementById('totalGymTime').textContent = this.formatTime(currentGymTime);
+                const gymTime = this.isWorkoutActive ? Math.floor((Date.now() - this.workoutStartTime) / 1000) : 0;
+    
+                document.getElementById('currentSets').textContent = this.setsCount;
+                document.getElementById('currentWorkoutTime').textContent = this.formatTime(this.totalWorkoutTime);
+                document.getElementById('currentRestTime').textContent = this.formatTime(this.totalRestTime);
+                document.getElementById('totalGymTime').textContent = this.formatTime(gymTime);
             }
 
             updateAnalytics() {
@@ -992,7 +983,6 @@
             }
         }
 
-        // --- Global Functions ---
         let gymTimer;
         
         function switchTab(tabName) {
@@ -1002,13 +992,11 @@
             if (tabIndex === -1) return;
             gymTimer.currentTabIndex = tabIndex;
             
-            // The bar is always fixed, so we just update its state
             const tabs = document.querySelector('.tabs');
             tabs.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const newActiveTab = tabs.querySelector(`[onclick="switchTab('${tabName}')"]`);
             if (newActiveTab) newActiveTab.classList.add('active');
 
-            // Update the visible content pane
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             
@@ -1031,7 +1019,6 @@
             }
         }
 
-        // --- Initialize App ---
         document.addEventListener('DOMContentLoaded', function() {
             gymTimer = new GymTimer();
             
