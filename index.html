@@ -89,8 +89,9 @@
             overflow: hidden;
             word-wrap: break-word;
         }
-
-        #analytics {
+        
+        /* UPDATED: Grouped selectors for consistent bottom padding */
+        #analytics, #logs {
             padding-bottom: 100px;
         }
 
@@ -593,7 +594,7 @@
                 this.currentWorkoutSets = [];
                 
                 this.startSet();
-                this.updateDisplays(); // Refresh display to show 1 set starting
+                this.updateDisplays(); 
                 
                 document.getElementById('startBtn').style.display = 'none';
                 document.getElementById('stopBtn').style.display = 'inline-block';
