@@ -53,13 +53,12 @@
             font-weight: 700;
         }
         
-        /* REVERTED: Styles for the tab bar, now part of the content flow */
         .tabs {
             display: flex;
             background: #2a2a2a;
             border-radius: 12px;
             padding: 4px;
-            margin: 30px 0 10px 0; /* Add space above and below */
+            margin: 30px 0 10px 0; 
         }
 
         .tab {
@@ -83,6 +82,7 @@
             animation: fadeIn 0.5s ease;
             overflow: hidden;
             word-wrap: break-word;
+            padding-bottom: 40px; /* NEW: Adds extra scroll space at the bottom */
         }
 
         .tab-content.active {
@@ -322,7 +322,6 @@
             
             .container {
                 padding: 15px;
-                padding-bottom: 15px;
             }
         }
     </style>
@@ -487,13 +486,11 @@
     <script>
         class GymTimer {
             constructor() {
-                // State properties
                 this.isWorkoutActive = false;
                 this.isSetActive = false;
                 this.isResting = false;
                 this.isPaused = false;
                 
-                // Time tracking
                 this.setStartTime = null;
                 this.workoutStartTime = null;
                 this.pauseStartTime = null;
@@ -504,28 +501,23 @@
                 this.totalRestTime = 0;
                 this.setsCount = 0;
                 
-                // Timers
                 this.timer = null;
                 this.restTimer = null;
                 
-                // Data and logs
                 this.workoutData = this.loadData();
                 this.currentWorkoutSets = [];
 
-                // Swipe navigation state
                 this.tabs = ['timer', 'analytics', 'logs'];
                 this.currentTabIndex = 0;
                 this.touchStartX = 0;
                 this.touchEndX = 0;
                 
-                // Initialize UI and event listeners
                 this.setupSwipeListeners();
                 this.updateDisplays();
                 this.updateAnalytics();
                 this.loadLogs();
             }
             
-            // --- Swipe Navigation Methods ---
             setupSwipeListeners() {
                 const container = document.querySelector('.container');
                 container.addEventListener('touchstart', (e) => this.handleTouchStart(e), false);
@@ -542,7 +534,7 @@
             }
 
             handleSwipe() {
-                const swipeThreshold = 50; // Min pixels for a swipe
+                const swipeThreshold = 50; 
                 const swipeDistance = this.touchEndX - this.touchStartX;
 
                 if (swipeDistance < -swipeThreshold) { // Swipe Left
@@ -557,8 +549,6 @@
                     }
                 }
             }
-
-            // --- Core Timer and Data Logic ---
 
             loadData() {
                 const stored = localStorage.getItem('gymTimerData');
@@ -1010,7 +1000,6 @@
         // --- Global Functions ---
         let gymTimer;
         
-        // NEW: Global switchTab function for both clicks and swipes
         function switchTab(tabName) {
             if (!gymTimer) return;
 
@@ -1018,7 +1007,6 @@
             if (tabIndex === -1) return;
             gymTimer.currentTabIndex = tabIndex;
 
-            // Update the active class on ALL three tab bars
             document.querySelectorAll('.tabs').forEach(tabBar => {
                 tabBar.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
                 const newActiveTab = tabBar.querySelector(`[onclick="switchTab('${tabName}')"]`);
@@ -1027,11 +1015,9 @@
                 }
             });
 
-            // Update the visible content pane
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             
-            // Run tab-specific updates
             if (tabName === 'analytics') {
                 gymTimer.updateAnalytics();
             } else if (tabName === 'logs') {
@@ -1054,9 +1040,8 @@
         // --- Initialize App ---
         document.addEventListener('DOMContentLoaded', function() {
             gymTimer = new GymTimer();
-            switchTab('timer'); // Set initial state correctly
+            switchTab('timer'); 
             
-            // Global display updater
             setInterval(() => {
                 if (gymTimer && gymTimer.isWorkoutActive) {
                     gymTimer.updateDisplays();
